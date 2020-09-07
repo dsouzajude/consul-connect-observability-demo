@@ -1,0 +1,133 @@
+[
+    {
+        "name": "consul-agent",
+        "image": "${consul_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "${service_name}"
+            }
+        ],
+        "portMappings": [
+            {
+                "containerPort": 8500,
+                "hostPort": 8500,
+                "protocol": "tcp"
+            },
+            {
+                "containerPort": 8502,
+                "hostPort": 8502,
+                "protocol": "tcp"
+            },
+            {
+                "containerPort": 8301,
+                "hostPort": 8301,
+                "protocol": "tcp"
+            }
+        ],
+        "environment": [
+            {
+                "name": "MODE",
+                "value": "client"
+            },
+            {
+                "name": "AWS_REGION",
+                "value": "${region}"
+            },
+            {
+                "name": "CONSUL_ECS_CLUSTER",
+                "value": "${consul_ecs_cluster}"
+            },
+            {
+                "name": "CONSUL_ECS_SERVICE",
+                "value": "${consul_ecs_service}"
+            },
+            {
+                "name": "CONSUL_SERVER_DNS",
+                "value": "${consul_server_dns}"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "curl -f http://localhost:8500/v1/operator/autopilot/health || exit 1"
+            ],
+            "interval": 5,
+            "retries": 3,
+            "timeout": 5
+        },
+        "command": ["-client", "0.0.0.0", "-log-level", "info", "-log-json"],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/consul-client",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "consul",
+                "awslogs-create-group": "true"
+            }
+        }
+    },
+    {
+        "name": "${service_name}-proxy",
+        "image": "${envoy_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "consul-agent"
+            }
+        ],
+        "environment": [
+            {
+                "name": "CONSUL_HTTP_ADDR",
+                "value": "127.0.0.1:8500"
+            },
+            {
+                "name": "CONSUL_GRPC_ADDR",
+                "value": "127.0.0.1:8502"
+            },
+            {
+                "name": "SERVICE_CONFIG_B64",
+                "value": "${consul_service_config_b64}"
+            }
+        ],
+        "command": ["--", "-l", "info"],
+        "portMappings": [
+            {
+                "hostPort": 9102,
+                "containerPort": 9102,
+                "protocol": "tcp"
+            },
+            {
+                "hostPort": ${proxy_port},
+                "containerPort": ${proxy_port},
+                "protocol": "tcp"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "nc -zv -w 5 127.0.0.1 ${proxy_port} || exit 1"
+            ],
+            "interval": 15,
+            "retries": 5,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/${service_name}-proxy",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "envoy",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]

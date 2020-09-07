@@ -1,0 +1,42 @@
+{
+    "service": {
+        "id": "<PLACEHOLDER>",
+        "name": "${service_name}",
+        "port": ${container_port},
+        "address": "<PLACEHOLDER>",
+        "connect": {
+            "sidecar_service": {
+                "name": "${service_name}-proxy",
+                "tags": [
+                    "IsProxy:yes",
+                    "ParentService:${service_name}",
+                    "Orchestrator:ecs",
+                    "LaunchType:fargate",
+                    "Region:${region}",
+                    "ServiceName:${service_name}-proxy"
+                ],
+                "proxy": {
+                    "config": {
+                        "envoy_prometheus_bind_addr": "0.0.0.0:9102",
+                        "envoy_tracing_json": ${envoy_tracing_json}
+                    },
+                    "upstreams": ${upstreams}
+                }
+            }
+        },
+        "check": {
+            "id": "check-${service_name}",
+            "http": "http://127.0.0.1:${health_check_port}${health_check_path}",
+            "method": "GET",
+            "interval": "${health_check_interval}",
+            "timeout": "${health_check_timeout}",
+            "deregister_critical_service_after": "10m"
+        },
+        "tags": [
+            "Orchestrator:ecs",
+            "LaunchType:fargate",
+            "Region:${region}",
+            "ServiceName:${service_name}"
+        ]
+    }
+}

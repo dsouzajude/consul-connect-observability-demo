@@ -1,0 +1,29 @@
+[
+    {
+        "name": "xray",
+        "image": "amazon/aws-xray-daemon",
+        "user": "1337",
+        "essential": true,
+        "cpu": 32,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "memoryReservation": 256,
+        "environment": [],
+        "portMappings": [
+            {
+                "hostPort": 2000,
+                "containerPort": 2000,
+                "protocol": "udp"
+            }
+        ],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "${service_name}-xray",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "ecs",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]
