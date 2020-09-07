@@ -14,12 +14,12 @@ locals {
   # -------------------
 
   // Upstreams Config
-  upstreams = [
+  upstreams = length(compact(var.upstream_connections)) > 0 ? [
     for u in var.upstream_connections : {
       "destination_name" = split(":", u)[0],
       "local_bind_port"  = tonumber(split(":", u)[1])
     }
-  ]
+  ] : []
 
   // Tracing Config - Needs to be JSON escaped
   tracing_config = templatefile(
