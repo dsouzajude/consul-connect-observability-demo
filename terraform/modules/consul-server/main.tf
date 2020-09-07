@@ -24,6 +24,8 @@ locals {
   aws_account_id = data.aws_caller_identity.current.account_id
 
   http_port = 8500
+  grpc_port = 8502
+  rpc_port  = 8301
 
   container_definitions = templatefile(
     "${path.module}/templates/container-definitions.json",
@@ -33,6 +35,8 @@ locals {
       region           = data.aws_region.current.name
       cluster_name     = var.cluster_name
       http_port        = local.http_port
+      rpc_port         = local.rpc_port
+      grpc_port        = local.grpc_port
       bootstrap_expect = var.size
     }
   )
@@ -51,7 +55,6 @@ module "ecs_service" {
   container_port         = local.http_port
   desired_count_of_tasks = var.size
   environment            = var.environment
-  requires_target_group  = true
   service_name           = var.service_name
 
   security_group_ids = concat(var.additional_security_group_ids,
@@ -60,37 +63,25 @@ module "ecs_service" {
     ]
   )
 
-  subnet_ids       = var.subnet_ids
-  tags             = var.tags
-  target_group_arn = aws_alb_target_group.http.arn
-}
-
-// Consul bootstrap policy
-resource "aws_iam_role_policy" "task" {
-  name = "${var.service_name}-consul-bootstrap-policy"
-  role = module.ecs_service.ecs_task_role_id
-
-  policy = <<-EOF
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "ecs:ListTasks"
-        ],
-        "Resource": "*"
-      },
-      {
-        "Effect": "Allow",
-        "Action": [
-          "ecs:DescribeTasks"
-        ],
-        "Resource": "arn:aws:ecs:${data.aws_region.current.name}:${local.aws_account_id}:task/*"
-      }
-    ]
-  }
-  EOF
+  subnet_ids = var.subnet_ids
+  tags       = var.tags
+  target_groups = [
+    {
+      target_group_arn = aws_alb_target_group.http.arn
+      container_name   = var.service_name
+      container_port   = local.http_port
+    },
+    {
+      target_group_arn = aws_alb_target_group.rpc.arn
+      container_name   = var.service_name
+      container_port   = local.rpc_port
+    },
+    {
+      target_group_arn = aws_alb_target_group.grpc.arn
+      container_name   = var.service_name
+      container_port   = local.grpc_port
+    }
+  ]
 }
 
 # ----------------------
@@ -131,6 +122,48 @@ resource "aws_alb_target_group" "http" {
   }
 }
 
+resource "aws_alb_target_group" "rpc" {
+  name        = "${var.service_name}-rpc-${random_id.postfix.hex}"
+  port        = local.rpc_port
+  protocol    = "TCP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.selected.id
+
+  health_check {
+    protocol            = "TCP"
+    interval            = 10
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
+  }
+
+  tags = local.tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_alb_target_group" "grpc" {
+  name        = "${var.service_name}-grpc-${random_id.postfix.hex}"
+  port        = local.grpc_port
+  protocol    = "TCP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.selected.id
+
+  health_check {
+    protocol            = "TCP"
+    interval            = 10
+    healthy_threshold   = 5
+    unhealthy_threshold = 5
+  }
+
+  tags = local.tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.nlb.arn
   port              = local.http_port
@@ -138,6 +171,26 @@ resource "aws_lb_listener" "http" {
   default_action {
     type             = "forward"
     target_group_arn = aws_alb_target_group.http.arn
+  }
+}
+
+resource "aws_lb_listener" "rpc" {
+  load_balancer_arn = aws_lb.nlb.arn
+  port              = local.rpc_port
+  protocol          = "TCP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.rpc.arn
+  }
+}
+
+resource "aws_lb_listener" "grpc" {
+  load_balancer_arn = aws_lb.nlb.arn
+  port              = local.grpc_port
+  protocol          = "TCP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.grpc.arn
   }
 }
 
@@ -182,7 +235,9 @@ resource "aws_security_group" "consul_server" {
     from_port       = 8502
     to_port         = 8502
     protocol        = "TCP"
-    security_groups = [aws_security_group.consul_client.id]
+
+    // For clients as well + NLB Health Checks
+    cidr_blocks = [data.aws_vpc.selected.cidr_block]
   }
 
   ingress {
@@ -225,6 +280,7 @@ resource "aws_security_group" "consul_server" {
     to_port         = 8301
     protocol        = "tcp"
     self            = true
+    cidr_blocks     = [data.aws_vpc.selected.cidr_block]
     security_groups = [aws_security_group.consul_client.id]
   }
 
@@ -234,6 +290,7 @@ resource "aws_security_group" "consul_server" {
     to_port         = 8301
     protocol        = "udp"
     self            = true
+    cidr_blocks     = [data.aws_vpc.selected.cidr_block]
     security_groups = [aws_security_group.consul_client.id]
   }
 
@@ -316,11 +373,11 @@ resource "aws_security_group" "consul_client" {
   }
 
   ingress {
-    description     = "Allow incoming connections from proxy instances"
-    from_port       = 21000
-    to_port         = 21255
-    protocol        = "TCP"
-    self            = true
+    description = "Allow incoming connections from proxy instances"
+    from_port   = 21000
+    to_port     = 21255
+    protocol    = "TCP"
+    self        = true
   }
 
   ingress {

@@ -40,6 +40,14 @@
             {
                 "containerPort": ${http_port},
                 "hostPort": ${http_port}
+            },
+            {
+                "containerPort": ${rpc_port},
+                "hostPort": ${rpc_port}
+            },
+            {
+                "containerPort": ${grpc_port},
+                "hostPort": ${grpc_port}
             }
         ],
         "command": ["-server", "-log-level", "info", "-log-json"],

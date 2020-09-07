@@ -17,3 +17,17 @@ module "consul_server" {
   vpc_id                        = var.vpc_id
   zone_id                       = var.zone_id
 }
+
+# ------
+# Deploy
+# ------
+
+resource "null_resource" "deploy_consul" {
+  triggers = {
+    task_definition_arn = module.consul_server.consul_task_definition_arn
+  }
+
+  provisioner "local-exec" {
+    command = "AWS_CONFIG_FILE=$HOME/.aws/config AWS_PROFILE=${var.profile} aws ecs update-service --cluster ${var.cluster_name} --service ${module.consul_server.consul_service_arn} --task-definition ${module.consul_server.consul_task_definition_arn}"
+  }
+}

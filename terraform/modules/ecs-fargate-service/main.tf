@@ -59,17 +59,15 @@ resource "aws_ecs_service" "this" {
   desired_count                      = var.desired_count_of_tasks
   deployment_minimum_healthy_percent = 95
   deployment_maximum_percent         = 200
-  health_check_grace_period_seconds  = var.requires_target_group ? 90 : null
+  health_check_grace_period_seconds  = length(var.target_groups) == 0 ? null : 90
   propagate_tags                     = "SERVICE"
 
   dynamic "load_balancer" {
-    for_each = var.requires_target_group ? ["_"] : []
-    iterator = index
-
+    for_each = var.target_groups
     content {
-      target_group_arn = var.target_group_arn
-      container_name   = var.service_name
-      container_port   = var.container_port
+      target_group_arn = load_balancer.value.target_group_arn
+      container_name   = load_balancer.value.container_name
+      container_port   = load_balancer.value.container_port
     }
   }
 

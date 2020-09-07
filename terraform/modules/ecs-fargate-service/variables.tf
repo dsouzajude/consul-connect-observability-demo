@@ -38,12 +38,6 @@ variable "memory" {
   default     = 512
 }
 
-variable "requires_target_group" {
-  type        = bool
-  description = "Does the service require a target group?"
-  default     = false
-}
-
 variable "service_name" {
   type        = string
   description = "The name of the service application"
@@ -67,8 +61,12 @@ variable "tags" {
   default     = {}
 }
 
-variable "target_group_arn" {
-  type        = string
-  description = "The target group arn to attach to the service"
-  default     = ""
+variable "target_groups" {
+  type = set(object({
+    target_group_arn = string
+    container_name   = string
+    container_port   = number
+  }))
+  description = "List of Target groups to associate with the service"
+  default     = []
 }
