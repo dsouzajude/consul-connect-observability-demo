@@ -13,6 +13,16 @@ variable "environment" {
   description = "The name of the AWS environment that the topic is being created in"
 }
 
+variable "envoy_image" {
+  type        = string
+  description = "Envoy docker image"
+}
+
+variable "services" {
+  type        = map(map(string))
+  description = "An object that holds values for all services"
+}
+
 variable "subnet_ids" {
   type        = set(string)
   description = "Subnets to use in awsvpc network mode"
