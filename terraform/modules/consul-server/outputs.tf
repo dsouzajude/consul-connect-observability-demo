@@ -54,6 +54,6 @@ output "consul_client_sg_id" {
 }
 
 output "dns" {
-  value       = "var.service_name.${data.aws_route53_zone.consul.name}"
+  value       = "${var.service_name}.${data.aws_route53_zone.consul.name}"
   description = "Consul DNS"
 }
