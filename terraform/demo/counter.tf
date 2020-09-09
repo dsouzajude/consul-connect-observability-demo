@@ -40,7 +40,6 @@ module "counter_mesh_adapter" {
   health_check_port          = local.counter["health_check_port"]
   service_name               = local.counter["service_name"]
   tags                       = local.counter_tags
-  upstream_connections       = split(",", local.counter["upstream_connections"])
   enable_tracing             = true
 }
 
