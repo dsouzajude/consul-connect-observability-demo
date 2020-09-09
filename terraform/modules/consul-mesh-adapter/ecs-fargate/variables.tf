@@ -29,9 +29,14 @@ variable "consul_ecs_service" {
   description = "The ECS Service name for Consul"
 }
 
+variable "enable_proxy" {
+  type    = bool
+  default = true
+}
+
 variable "enable_tracing" {
-    type = bool
-    default = false
+  type    = bool
+  default = false
 }
 
 variable "envoy_image" {

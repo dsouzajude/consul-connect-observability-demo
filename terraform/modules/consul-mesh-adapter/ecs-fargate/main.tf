@@ -50,24 +50,33 @@ locals {
   # Container Definitions
   # ---------------------
 
-  // Consul Mesh Container Definitions
-  consul_mesh_container_definitions = jsondecode(templatefile(
-    "${path.module}/templates/consul-mesh-container-definitions.json",
+  // Consul Agent Container Definition
+  consul_agent_cdef = jsondecode(templatefile(
+    "${path.module}/templates/consul-agent-container-definitions.json",
     {
-      consul_image              = var.consul_image
+      consul_image       = var.consul_image
+      service_name       = var.service_name
+      region             = local.aws_region
+      consul_ecs_cluster = var.consul_ecs_cluster
+      consul_ecs_service = var.consul_ecs_service
+      consul_server_dns  = var.consul_server_dns
+    }
+  ))
+
+  // [Optional] Envoy Container Definition
+  envoy_cdef = var.enable_proxy ? jsondecode(templatefile(
+    "${path.module}/templates/envoy-container-definitions.json",
+    {
       service_name              = var.service_name
       region                    = local.aws_region
-      consul_ecs_cluster        = var.consul_ecs_cluster
-      consul_ecs_service        = var.consul_ecs_service
-      consul_server_dns         = var.consul_server_dns
       envoy_image               = var.envoy_image
       proxy_port                = local.proxy_port
       consul_service_config_b64 = base64encode(local.consul_service_config)
     }
-  ))
+  )) : []
 
-  // [Optional] X-Ray Container Definitions
-  xray_container_definitions = var.enable_tracing ? jsondecode(templatefile(
+  // [Optional] X-Ray Container Definition
+  xray_cdef = var.enable_tracing ? jsondecode(templatefile(
     "${path.module}/templates/xray-container-definitions.json",
     {
       service_name = var.service_name
@@ -76,14 +85,15 @@ locals {
   )) : []
 
   // Existing Service's Container Definitions
-  service_container_definitions = jsondecode(var.container_definitions_json)
+  service_cdef = jsondecode(var.container_definitions_json)
 
   // Putting it all together
   merged_container_definitions_json = jsonencode(
     concat(
-      local.service_container_definitions,
-      local.consul_mesh_container_definitions,
-      local.xray_container_definitions
+      local.service_cdef,
+      local.consul_agent_cdef,
+      local.envoy_cdef,
+      local.xray_cdef
     )
   )
 }

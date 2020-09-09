@@ -1,0 +1,61 @@
+[
+    {
+        "name": "${service_name}-proxy",
+        "image": "${envoy_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "consul-agent"
+            }
+        ],
+        "environment": [
+            {
+                "name": "CONSUL_HTTP_ADDR",
+                "value": "127.0.0.1:8500"
+            },
+            {
+                "name": "CONSUL_GRPC_ADDR",
+                "value": "127.0.0.1:8502"
+            },
+            {
+                "name": "SERVICE_CONFIG_B64",
+                "value": "${consul_service_config_b64}"
+            }
+        ],
+        "command": ["--", "-l", "info"],
+        "portMappings": [
+            {
+                "hostPort": 9102,
+                "containerPort": 9102,
+                "protocol": "tcp"
+            },
+            {
+                "hostPort": ${proxy_port},
+                "containerPort": ${proxy_port},
+                "protocol": "tcp"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "nc -zv -w 5 127.0.0.1 ${proxy_port} || exit 1"
+            ],
+            "interval": 15,
+            "retries": 5,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/${service_name}-proxy",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "envoy",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]
