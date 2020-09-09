@@ -1,0 +1,54 @@
+[
+    {
+        "name": "${service_name}",
+        "image": "${service_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "consul-agent"
+            }
+        ],
+        "environment": [
+            {
+                "name": "CONSUL_HTTP_ADDR",
+                "value": "127.0.0.1:8500"
+            },
+            {
+                "name": "CONSUL_GRPC_ADDR",
+                "value": "127.0.0.1:8502"
+            }
+        ],
+        "portMappings": [
+            {
+                "hostPort": ${http_port},
+                "containerPort": ${http_port}
+            },
+            {
+                "hostPort": ${container_port},
+                "containerPort": ${container_port}
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "nc -zv -w 5 127.0.0.1 ${health_check_port} || exit 1"
+            ],
+            "interval": 15,
+            "retries": 5,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/${service_name}",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "ingress-gw",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]
