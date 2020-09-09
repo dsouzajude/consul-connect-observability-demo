@@ -388,6 +388,14 @@ resource "aws_security_group" "consul_client" {
     self        = true
   }
 
+  ingress {
+    description = "Allow HTTP to Ingress Gateway"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "TCP"
+    self        = true
+  }
+
   lifecycle {
     create_before_destroy = true
   }
