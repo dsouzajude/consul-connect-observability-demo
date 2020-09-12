@@ -16,6 +16,7 @@
                 "protocol": "udp"
             }
         ],
+        "command": ["--log-level", "dev"],
         "logConfiguration": {
             "logDriver": "awslogs",
             "options": {
