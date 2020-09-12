@@ -42,7 +42,7 @@ locals {
       health_check_interval = var.health_check_interval
       health_check_timeout  = var.health_check_timeout
       upstreams             = jsonencode(local.upstreams)
-      envoy_tracing_json    = var.enable_tracing ? local.tracing_config : null
+      envoy_tracing_json    = var.enable_tracing ? local.tracing_config : "{}"
     }
   )
 

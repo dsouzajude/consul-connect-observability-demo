@@ -1,0 +1,41 @@
+[
+    {
+        "name": "${service_name}",
+        "image": "${service_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "environment": [
+            {
+                "name": "PORT",
+                "value": "${container_port}"
+            }
+        ],
+        "portMappings": [
+            {
+                "hostPort": ${container_port},
+                "containerPort": ${container_port},
+                "protocol": "tcp"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "nc -zv -w 5 127.0.0.1 ${health_check_port} || exit 1"
+            ],
+            "interval": 15,
+            "retries": 3,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/${service_name}",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "ecs",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]
