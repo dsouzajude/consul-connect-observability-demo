@@ -389,9 +389,17 @@ resource "aws_security_group" "consul_client" {
   }
 
   ingress {
-    description = "Allow HTTP to Ingress Gateway"
+    description = "Allow HTTP to HAProxy Ingress Gateway"
     from_port   = 80
     to_port     = 80
+    protocol    = "TCP"
+    self        = true
+  }
+
+  ingress {
+    description = "Allow HTTP to Envoy Ingress Gateway"
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "TCP"
     self        = true
   }

@@ -12,12 +12,16 @@ locals {
   ingress_gw_container_def = templatefile(
     "./templates/ingress-gw-container-definitions.json",
     {
-      service_name      = local.ingress_gw["service_name"]
-      service_image     = local.ingress_gw["service_image"]
-      container_port    = local.ingress_gw["container_port"]
-      http_port         = local.ingress_gw["http_port"]
-      health_check_port = local.ingress_gw["health_check_port"]
-      region            = local.aws_region
+      region = local.aws_region
+
+      haproxy_gw_image          = local.ingress_gw["haproxy_gw_image"]
+      haproxy_port              = local.ingress_gw["haproxy_port"]
+      haproxy_health_check_port = local.ingress_gw["haproxy_health_check_port"]
+
+      envoy_gw_image          = local.ingress_gw["envoy_gw_image"]
+      envoy_port              = local.ingress_gw["envoy_port"]
+      envoy_process_port      = local.ingress_gw["envoy_process_port"]
+      envoy_health_check_port = local.ingress_gw["envoy_health_check_port"]
     }
   )
 }
@@ -31,7 +35,6 @@ module "ingress_gw_mesh_adapter" {
 
   consul_image               = var.consul_image
   container_definitions_json = local.ingress_gw_container_def
-  container_port             = local.ingress_gw["container_port"]
   consul_server_dns          = module.consul_server.dns
   consul_ecs_cluster         = module.ecs_cluster.cluster_name
   consul_ecs_service         = local.consul_service_name
@@ -51,7 +54,7 @@ module "ingress_gw_service" {
 
   cluster_name           = module.ecs_cluster.cluster_name
   container_definitions  = module.ingress_gw_mesh_adapter.updated_container_definitions_json
-  container_port         = local.ingress_gw["container_port"]
+  container_port         = local.ingress_gw["haproxy_port"]
   desired_count_of_tasks = local.ingress_gw["desired_count_tasks"]
   environment            = var.environment
   service_name           = local.ingress_gw["service_name"]

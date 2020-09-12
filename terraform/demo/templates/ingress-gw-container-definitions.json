@@ -1,7 +1,46 @@
 [
     {
-        "name": "${service_name}",
-        "image": "${service_image}",
+        "name": "haproxy",
+        "image": "${haproxy_gw_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "envoy-ingress"
+            }
+        ],
+        "environment": [],
+        "portMappings": [
+            {
+                "hostPort": ${haproxy_port},
+                "containerPort": ${haproxy_port}
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "curl -f http://127.0.0.1:${haproxy_health_check_port}/health || exit 1"
+            ],
+            "interval": 15,
+            "retries": 5,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/haproxy-ingress",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "haproxy-ingress",
+                "awslogs-create-group": "true"
+            }
+        }
+    },
+    {
+        "name": "envoy-ingress",
+        "image": "${envoy_gw_image}",
         "essential": true,
         "cpu": 0,
         "mountPoints": [],
@@ -24,18 +63,18 @@
         ],
         "portMappings": [
             {
-                "hostPort": ${http_port},
-                "containerPort": ${http_port}
+                "hostPort": ${envoy_port},
+                "containerPort": ${envoy_port}
             },
             {
-                "hostPort": ${container_port},
-                "containerPort": ${container_port}
+                "hostPort": ${envoy_process_port},
+                "containerPort": ${envoy_process_port}
             }
         ],
         "healthCheck": {
             "command": [
                 "CMD-SHELL",
-                "nc -zv -w 5 127.0.0.1 ${health_check_port} || exit 1"
+                "nc -zv -w 5 127.0.0.1 ${envoy_health_check_port} || exit 1"
             ],
             "interval": 15,
             "retries": 5,
@@ -44,9 +83,9 @@
         "logConfiguration": {
             "logDriver": "awslogs",
             "options": {
-                "awslogs-group": "/ecs/${service_name}",
+                "awslogs-group": "/ecs/envoy-ingress",
                 "awslogs-region": "${region}",
-                "awslogs-stream-prefix": "ingress-gw",
+                "awslogs-stream-prefix": "envoy-ingress",
                 "awslogs-create-group": "true"
             }
         }
