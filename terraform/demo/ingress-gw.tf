@@ -14,10 +14,6 @@ locals {
     {
       region = local.aws_region
 
-      haproxy_gw_image          = local.ingress_gw["haproxy_gw_image"]
-      haproxy_port              = local.ingress_gw["haproxy_port"]
-      haproxy_health_check_port = local.ingress_gw["haproxy_health_check_port"]
-
       envoy_gw_image          = local.ingress_gw["envoy_gw_image"]
       envoy_port              = local.ingress_gw["envoy_port"]
       envoy_process_port      = local.ingress_gw["envoy_process_port"]
@@ -54,7 +50,7 @@ module "ingress_gw_service" {
 
   cluster_name           = module.ecs_cluster.cluster_name
   container_definitions  = module.ingress_gw_mesh_adapter.updated_container_definitions_json
-  container_port         = local.ingress_gw["haproxy_port"]
+  container_port         = local.ingress_gw["envoy_port"]
   desired_count_of_tasks = local.ingress_gw["desired_count_tasks"]
   environment            = var.environment
   service_name           = local.ingress_gw["service_name"]

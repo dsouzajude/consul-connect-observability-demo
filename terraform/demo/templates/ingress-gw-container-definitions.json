@@ -1,44 +1,5 @@
 [
     {
-        "name": "haproxy",
-        "image": "${haproxy_gw_image}",
-        "essential": true,
-        "cpu": 0,
-        "mountPoints": [],
-        "volumesFrom": [],
-        "dependsOn": [
-            {
-                "condition": "HEALTHY",
-                "containerName": "envoy-ingress"
-            }
-        ],
-        "environment": [],
-        "portMappings": [
-            {
-                "hostPort": ${haproxy_port},
-                "containerPort": ${haproxy_port}
-            }
-        ],
-        "healthCheck": {
-            "command": [
-                "CMD-SHELL",
-                "curl -f http://127.0.0.1:${haproxy_health_check_port}/health || exit 1"
-            ],
-            "interval": 15,
-            "retries": 5,
-            "timeout": 5
-        },
-        "logConfiguration": {
-            "logDriver": "awslogs",
-            "options": {
-                "awslogs-group": "/ecs/haproxy-ingress",
-                "awslogs-region": "${region}",
-                "awslogs-stream-prefix": "haproxy-ingress",
-                "awslogs-create-group": "true"
-            }
-        }
-    },
-    {
         "name": "envoy-ingress",
         "image": "${envoy_gw_image}",
         "essential": true,
