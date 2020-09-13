@@ -2,6 +2,10 @@
 UNAME_S ?= $(shell uname -s)
 STAT_COMMAND = "$(shell if [ "$(UNAME_S)" = 'Linux' ]; then echo "stat -c '%Y'"; else echo "stat -f'%m'"; fi)"
 
+TAG = $(shell git rev-parse --short HEAD 2>/dev/null)
+BRANCH = $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
+COUNTER_IMAGE=${REGISTRY}/consul-counter-app:${BRANCH}-${TAG}
+
 
 # -----------------------
 # Terraform Metadata Vars
@@ -62,3 +66,16 @@ plan-destroy: init
 clean:
 	rm -f *.plan
 	rm -rf .terraform
+
+
+# ------
+# Docker
+# ------
+validate-docker:
+	@if [ -z $(REGISTRY) ]; then echo "REGISTRY was not set" ; exit 10 ; fi
+
+build-counter: validate-docker
+	COUNTER_IMAGE=${COUNTER_IMAGE} docker-compose build counter
+
+run: build-counter
+	COUNTER_IMAGE=${COUNTER_IMAGE} docker-compose up
