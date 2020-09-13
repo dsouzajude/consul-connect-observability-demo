@@ -12,3 +12,18 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:80/health", "||", "exit 1"]
     restart: always
+
+  dashboard:
+    image: ${DASHBOARD_IMAGE}
+    build:
+      context: ./dashboard
+    ports:
+      - "9001:80"
+    links:
+      - counter
+    environment:
+      PORT: 80
+      COUNTER_ENDPOINT: "http://counter"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80/health", "||", "exit 1"]
+    restart: always
