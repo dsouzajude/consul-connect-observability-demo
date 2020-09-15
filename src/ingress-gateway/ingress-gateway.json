@@ -1,0 +1,40 @@
+{
+    "Kind": "ingress-gateway",
+    "Name": "ingress-gateway",
+    "Listeners": [
+        {
+            "Port": 80,
+            "Protocol": "http",
+            "Services": [
+                {
+                    "Name": "dashboard",
+                    "Hosts": [
+                        "dashboard.ingress",
+                        "dashboard.ingress.eu-west-1.consul"
+                    ]
+                },
+                {
+                    "Name": "counter",
+                    "Hosts": [
+                        "counter.ingress",
+                        "counter.ingress.eu-west-1.consul"
+                    ]
+                },
+                {
+                    "Name": "prometheus",
+                    "Hosts": [
+                        "prometheus.ingress",
+                        "prometheus.ingress.eu-west-1.consul"
+                    ]
+                },
+                {
+                    "Name": "grafana",
+                    "Hosts": [
+                        "grafana.ingress",
+                        "grafana.ingress.eu-west-1.consul"
+                    ]
+                }
+            ]
+        }
+    ]
+}
