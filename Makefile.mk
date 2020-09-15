@@ -5,8 +5,13 @@ STAT_COMMAND = "$(shell if [ "$(UNAME_S)" = 'Linux' ]; then echo "stat -c '%Y'";
 TAG = $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH = $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-export COUNTER_IMAGE=${REGISTRY}/consul-counter-app:${BRANCH}-${TAG}
-export DASHBOARD_IMAGE=${REGISTRY}/consul-dashboard-app:${BRANCH}-${TAG}
+export COUNTER_IMAGE=${REGISTRY}/blog-obsv-counter:${BRANCH}-${TAG}
+export DASHBOARD_IMAGE=${REGISTRY}/blog-obsv-dashboard:${BRANCH}-${TAG}
+export CONSUL_IMAGE=${REGISTRY}/blog-obsv-consul:dev4223d4f83-${BRANCH}-${TAG}
+export ENVOY_IMAGE=${REGISTRY}/blog-obsv-envoy:dev4223d4f83-v1.15.0-${BRANCH}-${TAG}
+export INGRESS_IMAGE=${REGISTRY}/blog-obsv-ingress:dev4223d4f83-v1.15.0-0.1.3-${BRANCH}-${TAG}
+export GRAFANA_IMAGE=${REGISTRY}/blog-obsv-grafana:${BRANCH}-${TAG}
+export PROMETHEUS_IMAGE=${REGISTRY}/blog-obsv-prometheus:${BRANCH}-${TAG}
 
 
 # -----------------------
@@ -77,7 +82,19 @@ validate-docker:
 	@if [ -z $(REGISTRY) ]; then echo "REGISTRY was not set" ; exit 10 ; fi
 
 build-all: validate-docker
-	docker-compose build
+	docker build -t $(COUNTER_IMAGE) ./counter
+	docker build -t $(DASHBOARD_IMAGE) ./dashboard
+	docker build -t $(CONSUL_IMAGE) ./consul
+	docker build -t $(ENVOY_IMAGE) ./envoy
+	docker build -t $(INGRESS_IMAGE) ./ingress-gateway
+	docker build -t $(GRAFANA_IMAGE) ./grafana
+	docker build -t $(PROMETHEUS_IMAGE) ./prometheus
 
-run: build-all
-	docker-compose up
+push-all: build-all
+	docker push $(COUNTER_IMAGE)
+	docker push $(DASHBOARD_IMAGE)
+	docker push $(CONSUL_IMAGE)
+	docker push $(ENVOY_IMAGE)
+	docker push $(INGRESS_IMAGE)
+	docker push $(GRAFANA_IMAGE)
+	docker push $(PROMETHEUS_IMAGE)
