@@ -102,17 +102,6 @@ Config {
                                                     "route": {
                                                         "cluster": "local_app"
                                                     }
-                                                },
-                                                {
-                                                    "match": {
-                                                        "prefix": "/ping"
-                                                    },
-                                                    "direct_response": {
-                                                        "status": 200,
-                                                        "body": {
-                                                            "inline_string": "pong"
-                                                        }
-                                                    }
                                                 }
                                             ],
                                             "domains": [
