@@ -1,6 +1,6 @@
 [
     {
-        "name": "envoy-ingress",
+        "name": "${service_name}",
         "image": "${envoy_gw_image}",
         "essential": true,
         "cpu": 0,
@@ -44,9 +44,9 @@
         "logConfiguration": {
             "logDriver": "awslogs",
             "options": {
-                "awslogs-group": "/ecs/envoy-ingress",
+                "awslogs-group": "/ecs/${service_name}",
                 "awslogs-region": "${region}",
-                "awslogs-stream-prefix": "envoy-ingress",
+                "awslogs-stream-prefix": "${service_name}",
                 "awslogs-create-group": "true"
             }
         }
