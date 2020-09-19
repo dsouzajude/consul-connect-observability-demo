@@ -5,14 +5,28 @@ STAT_COMMAND = "$(shell if [ "$(UNAME_S)" = 'Linux' ]; then echo "stat -c '%Y'";
 TAG = $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH = $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 
-export COUNTER_IMAGE=${REGISTRY}/blog-obsv-counter:${BRANCH}-${TAG}
-export DASHBOARD_IMAGE=${REGISTRY}/blog-obsv-dashboard:${BRANCH}-${TAG}
-export CONSUL_IMAGE=${REGISTRY}/blog-obsv-consul:dev4223d4f83-${BRANCH}-${TAG}
-export ENVOY_IMAGE=${REGISTRY}/blog-obsv-envoy:dev4223d4f83-v1.15.0-${BRANCH}-${TAG}
-export INGRESS_IMAGE=${REGISTRY}/blog-obsv-ingress:dev4223d4f83-v1.15.0-0.1.3-${BRANCH}-${TAG}
-export GRAFANA_IMAGE=${REGISTRY}/blog-obsv-grafana:${BRANCH}-${TAG}
-export PROMETHEUS_IMAGE=${REGISTRY}/blog-obsv-prometheus:${BRANCH}-${TAG}
+# -------------
+# Docker Images
+# -------------
 
+SERVICES = dashboard counter consul envoy ingress grafana prometheus
+
+COUNTER_IMAGE 	 = ${REGISTRY}/blog-obsv-counter:${BRANCH}-${TAG}
+DASHBOARD_IMAGE	 = ${REGISTRY}/blog-obsv-dashboard:${BRANCH}-${TAG}
+CONSUL_IMAGE 	 = ${REGISTRY}/blog-obsv-consul:dev4223d4f83-${BRANCH}-${TAG}
+ENVOY_IMAGE		 = ${REGISTRY}/blog-obsv-envoy:dev4223d4f83-v1.15.0-${BRANCH}-${TAG}
+INGRESS_IMAGE	 = ${REGISTRY}/blog-obsv-ingress:dev4223d4f83-v1.15.0-0.1.3-${BRANCH}-${TAG}
+GRAFANA_IMAGE 	 =  ${REGISTRY}/blog-obsv-grafana:${BRANCH}-${TAG}
+PROMETHEUS_IMAGE = ${REGISTRY}/blog-obsv-prometheus:${BRANCH}-${TAG}
+
+# ----------------
+# Helper functions
+# ----------------
+
+upper := $(shell echo $(SERVICE) | tr a-z A-Z)
+get_image := $(call $(call upper,$(SERVICE))_IMAGE)
+build_image := docker build -t $(call get_image) ./$(SERVICE)
+push_image := docker push $(call get_image)
 
 # -----------------------
 # Terraform Metadata Vars
@@ -74,27 +88,23 @@ clean:
 	rm -f *.plan
 	rm -rf .terraform
 
-
 # ------
 # Docker
 # ------
+
 validate-docker:
-	@if [ -z $(REGISTRY) ]; then echo "REGISTRY was not set" ; exit 10 ; fi
+	@if [ -z $(REGISTRY) ]; then \
+		echo "REGISTRY was not set" ; exit 10 ; \
+	fi
 
-build-all: validate-docker
-	docker build -t $(COUNTER_IMAGE) ./counter
-	docker build -t $(DASHBOARD_IMAGE) ./dashboard
-	docker build -t $(CONSUL_IMAGE) ./consul
-	docker build -t $(ENVOY_IMAGE) ./envoy
-	docker build -t $(INGRESS_IMAGE) ./ingress-gateway
-	docker build -t $(GRAFANA_IMAGE) ./grafana
-	docker build -t $(PROMETHEUS_IMAGE) ./prometheus
+build: validate-docker
+	@if [ -z $(SERVICE) ]; then echo "SERVICE was not set" ; exit 10 ; fi
+	$(call build_image)
 
-push-all: build-all
-	docker push $(COUNTER_IMAGE)
-	docker push $(DASHBOARD_IMAGE)
-	docker push $(CONSUL_IMAGE)
-	docker push $(ENVOY_IMAGE)
-	docker push $(INGRESS_IMAGE)
-	docker push $(GRAFANA_IMAGE)
-	docker push $(PROMETHEUS_IMAGE)
+push: build
+	$(call push_image)
+
+build-push-all: validate-docker
+	for service in $(SERVICES) ; do \
+		$(MAKE) push SERVICE=$$service; \
+	done
