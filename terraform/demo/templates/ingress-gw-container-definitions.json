@@ -1,0 +1,54 @@
+[
+    {
+        "name": "${service_name}",
+        "image": "${envoy_gw_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "consul-agent"
+            }
+        ],
+        "environment": [
+            {
+                "name": "CONSUL_HTTP_ADDR",
+                "value": "127.0.0.1:8500"
+            },
+            {
+                "name": "CONSUL_GRPC_ADDR",
+                "value": "127.0.0.1:8502"
+            }
+        ],
+        "portMappings": [
+            {
+                "hostPort": ${envoy_port},
+                "containerPort": ${envoy_port}
+            },
+            {
+                "hostPort": ${envoy_process_port},
+                "containerPort": ${envoy_process_port}
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "nc -zv -w 5 127.0.0.1 ${envoy_health_check_port} || exit 1"
+            ],
+            "interval": 15,
+            "retries": 5,
+            "timeout": 5
+        },
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/${service_name}",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "${service_name}",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]

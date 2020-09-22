@@ -1,0 +1,35 @@
+---
+
+global:
+  scrape_interval: 10s
+  external_labels:
+    Environment: sandbox # TODO: Use Environment Variable
+    Region: eu-west-1 # TODO: Use Environment Variable
+    Source: prometheus
+
+scrape_configs:
+
+  - job_name: consul-services
+    metrics_path: "/metrics"
+
+    consul_sd_configs:
+      - server: 127.0.0.1:8500
+        datacenter: eu-west-1   # TODO: Use Environment Variable
+
+    relabel_configs:
+
+      # Filter in only proxy services
+      - source_labels: [__meta_consul_tags]
+        regex: .*,IsProxy:yes,.*
+        action: keep
+
+      # Use the Consul's service name as the job name
+      - source_labels: [__meta_consul_service]
+        target_label: job
+
+      # Replace the service's ports with the proxy's prometheus exposed port
+      - source_labels: ['__address__']
+        separator:     ':'
+        regex:         '(.*):(.*)'
+        target_label:  '__address__'
+        replacement:   '${1}:9102'

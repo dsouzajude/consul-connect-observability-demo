@@ -1,0 +1,104 @@
+[
+    {
+        "name": "${service_name}",
+        "image": "${consul_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "environment": [
+            {
+                "name": "MODE",
+                "value": "server"
+            },
+            {
+                "name": "AWS_REGION",
+                "value": "${region}"
+            },
+            {
+                "name": "BOOTSTRAP_EXPECT",
+                "value": "${bootstrap_expect}"
+            },
+            {
+                "name": "CONSUL_ECS_CLUSTER",
+                "value": "${cluster_name}"
+            },
+            {
+                "name": "CONSUL_ECS_SERVICE",
+                "value": "${service_name}"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "curl -f http://localhost:${http_port}/v1/operator/autopilot/health || exit 1"
+            ],
+            "interval": 15,
+            "retries": 3,
+            "timeout": 5
+        },
+        "portMappings": [
+            {
+                "containerPort": ${http_port},
+                "hostPort": ${http_port}
+            },
+            {
+                "containerPort": ${rpc_port},
+                "hostPort": ${rpc_port}
+            },
+            {
+                "containerPort": ${grpc_port},
+                "hostPort": ${grpc_port}
+            }
+        ],
+        "command": ["-server", "-log-level", "info", "-log-json"],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/consul",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "consul",
+                "awslogs-create-group": "true"
+            }
+        }
+    },
+    {
+        "name": "${service_name}-operator",
+        "image": "${consul_image}",
+        "essential": false,
+        "cpu": 0,
+        "mountPoints": [],
+        "portMappings": [],
+        "dependsOn": [
+            {
+                "condition": "HEALTHY",
+                "containerName": "${service_name}"
+            }
+        ],
+        "environment": [
+            {
+                "name": "MODE",
+                "value": "operator"
+            },
+            {
+                "name": "CONSUL_HTTP_ADDR",
+                "value": "127.0.0.1:${http_port}"
+            }
+        ],
+        "command": ["consul", "config", "list", "-kind", "proxy-defaults"],
+        "volumesFrom": [
+            {
+                "readOnly": false,
+                "sourceContainer": "${service_name}"
+            }
+        ],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/consul-operator",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "consul",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]

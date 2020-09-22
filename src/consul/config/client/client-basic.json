@@ -1,0 +1,26 @@
+{
+    "client_addr": "0.0.0.0",
+    "data_dir": "/consul/data",
+    "disable_remote_exec": true,
+    "disable_update_check": true,
+    "leave_on_terminate": true,
+    "skip_leave_on_interrupt": false,
+    "reconnect_timeout": "1h",
+    "performance": {
+        "raft_multiplier": 1
+    },
+    "raft_protocol": 3,
+    "dns_config": {
+        "enable_truncate": true,
+        "udp_answer_limit": 100,
+        "only_passing": true
+    },
+    "server": false,
+    "connect": {
+        "enabled": true
+    },
+    "ports": {
+        "grpc": 8502
+    },
+    "enable_central_service_config": true
+}

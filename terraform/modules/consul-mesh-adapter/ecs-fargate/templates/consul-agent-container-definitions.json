@@ -1,0 +1,75 @@
+[
+    {
+        "name": "consul-agent",
+        "image": "${consul_image}",
+        "essential": true,
+        "cpu": 0,
+        "mountPoints": [],
+        "volumesFrom": [],
+        "dependsOn": [],
+        "portMappings": [
+            {
+                "containerPort": 8500,
+                "hostPort": 8500,
+                "protocol": "tcp"
+            },
+            {
+                "containerPort": 8502,
+                "hostPort": 8502,
+                "protocol": "tcp"
+            },
+            {
+                "containerPort": 8301,
+                "hostPort": 8301,
+                "protocol": "tcp"
+            }
+        ],
+        "environment": [
+            {
+                "name": "MODE",
+                "value": "client"
+            },
+            {
+                "name": "AWS_REGION",
+                "value": "${region}"
+            },
+            {
+                "name": "CONSUL_ECS_CLUSTER",
+                "value": "${consul_ecs_cluster}"
+            },
+            {
+                "name": "CONSUL_ECS_SERVICE",
+                "value": "${consul_ecs_service}"
+            },
+            {
+                "name": "CONSUL_SERVER_DNS",
+                "value": "${consul_server_dns}"
+            }
+        ],
+        "healthCheck": {
+            "command": [
+                "CMD-SHELL",
+                "curl -f http://localhost:8500/v1/operator/autopilot/health || exit 1"
+            ],
+            "interval": 5,
+            "retries": 3,
+            "timeout": 5
+        },
+        "command": [
+            "-client",
+            "0.0.0.0",
+            "-log-level",
+            "info",
+            "-log-json"
+        ],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": "/ecs/consul-client",
+                "awslogs-region": "${region}",
+                "awslogs-stream-prefix": "consul",
+                "awslogs-create-group": "true"
+            }
+        }
+    }
+]
