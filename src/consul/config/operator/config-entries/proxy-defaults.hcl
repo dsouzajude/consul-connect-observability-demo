@@ -56,7 +56,6 @@ Config {
                                 "tracing": {},
                                 "add_user_agent": true,
                                 "codec_type": "AUTO",
-                                "generate_request_id": true,
                                 "use_remote_address": true,
                                 "upgrade_configs": [
                                     {
