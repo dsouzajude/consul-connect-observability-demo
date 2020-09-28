@@ -53,6 +53,10 @@ def get_trace_id(x_amzn_trace_id):
         return trace_id
 
 
+def get_request_id():
+    return request.headers.get("X-Request-Id")
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -79,18 +83,21 @@ def create_app():
                 "message": "Error occured",
                 "code": error.code,
                 "trace_id": get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                "request_id": request.headers.get("X-Request-Id")
+                "request_id": get_request_id()
             }), 500
         )
 
     @app.route("/")
     def hello():
         try:
-            resp = requests.get("{}/".format(COUNTER_ENDPOINT))
+            resp = requests.get(
+                "{}/".format(COUNTER_ENDPOINT),
+                headers={"X-Request-Id": get_request_id()}
+            )
             log.info(
                 "Received request, trace_id={}, req_id={}".format(
                     get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                    request.headers.get("X-Request-Id")
+                    get_request_id()
                 )
             )
             if resp.status_code == 200:
@@ -101,7 +108,7 @@ def create_app():
                     "counter_service_id": resp["counter_service_id"],
                     "dashboard_service_id": socket.gethostname(),
                     "trace_id": get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                    "request_id": request.headers.get("X-Request-Id")
+                    "request_id": get_request_id()
                 })
             else:
                 log.info("Error calling {} service! code={}, service={}".format(resp.text, resp.status_code, COUNTER_ENDPOINT))
@@ -110,7 +117,7 @@ def create_app():
                     "code": resp.status_code,
                     "error": resp.text,
                     "trace_id": get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                    "request_id": request.headers.get("X-Request-Id")
+                    "request_id": get_request_id()
 
                 }), 500)
         except requests.exceptions.RequestException as ex:
@@ -118,7 +125,7 @@ def create_app():
             resp = make_response(json.dumps({
                 "message": str(ex),
                 "trace_id": get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                "request_id": request.headers.get("X-Request-Id")
+                "request_id": get_request_id()
             }), 500)
         return resp
 
@@ -130,9 +137,12 @@ def create_app():
             "/fail?code={} called! Relaying to counter service, trace_id={}, req_id={}".format(
                 code,
                 get_trace_id(request.headers.get("X-Amzn-Trace-Id")),
-                request.headers.get("X-Request-Id")
+                get_request_id()
         ))
-        resp = requests.get("{}/fail?code={}".format(COUNTER_ENDPOINT, code))
+        resp = requests.get(
+            "{}/fail?code={}".format(COUNTER_ENDPOINT, code),
+            headers={"X-Request-Id": get_request_id()}
+        )
         resp = make_response(json.dumps({
             "message": "Received code={} on {}/fail?code={}".format(
                 resp.status_code, COUNTER_ENDPOINT, code
