@@ -10,7 +10,7 @@ In terms of observability, this demo will cover the basic Layer 7 metrics,
 access logs and distributed tracing using [Prometheus](https://prometheus.io/),
 [Grafana](https://grafana.com/), [AWS CloudWatch Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) and [AWS X-Ray](https://aws.amazon.com/xray/).
 
-You will find an in-depth explaination on how this works in my [Medium Blogpost](#TODO:)
+You will find an in-depth explaination on how this works in my [Medium Blogpost](https://medium.com/izettle-engineering/implementing-observability-in-a-service-mesh-273c7409283d)
 and therefore, I recommend that you read it first. In this guide however, I will
 show you how to set up necessary resources to run the demo.
 
@@ -24,8 +24,8 @@ In this demo, resources are created on AWS and are managed by Terraform which ar
 
 * An ECS Fargate cluster
 * ECS Fargate services which are of the following:
-    * HA Consul server
-    * A Consul Ingress Gateway Service
+    * HA Consul cluster
+    * A Consul managed Ingress Gateway Service
     * A service called `counter`
     * A service called `dashboard` which communicates with the `counter` service
     * Grafana for viewing Layer 7 HTTP metrics
